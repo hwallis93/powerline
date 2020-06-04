@@ -59,7 +59,7 @@ def system_load(pl, format='{avg:.1f}', threshold_good=1, threshold_bad=2,
 		else:
 			gradient_level = 100
 		ret.append({
-			'contents': format.format(avg=avg),
+			'contents': format.format(avg=avg*100),
 			'highlight_groups': ['system_load_gradient', 'system_load'],
 			'divider_highlight_group': 'background:divider',
 			'gradient_level': gradient_level,

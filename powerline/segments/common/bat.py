@@ -9,75 +9,75 @@ from powerline.lib.shell import run_cmd
 
 
 def _fetch_battery_info(pl):
-	try:
-		import dbus
-	except ImportError:
-		pl.debug('Not using DBUS+UPower as dbus is not available')
-	else:
-		try:
-			bus = dbus.SystemBus()
-		except Exception as e:
-			pl.exception('Failed to connect to system bus: {0}', str(e))
-		else:
-			interface = 'org.freedesktop.UPower'
-			try:
-				up = bus.get_object(interface, '/org/freedesktop/UPower')
-			except dbus.exceptions.DBusException as e:
-				if getattr(e, '_dbus_error_name', '').endswith('ServiceUnknown'):
-					pl.debug('Not using DBUS+UPower as UPower is not available via dbus')
-				else:
-					pl.exception('Failed to get UPower service with dbus: {0}', str(e))
-			else:
-				devinterface = 'org.freedesktop.DBus.Properties'
-				devtype_name = interface + '.Device'
-				devices = []
-				for devpath in up.EnumerateDevices(dbus_interface=interface):
-					dev = bus.get_object(interface, devpath)
-					devget = lambda what: dev.Get(
-						devtype_name,
-						what,
-						dbus_interface=devinterface
-					)
-					if int(devget('Type')) != 2:
-						pl.debug('Not using DBUS+UPower with {0}: invalid type', devpath)
-						continue
-					if not bool(devget('IsPresent')):
-						pl.debug('Not using DBUS+UPower with {0}: not present', devpath)
-						continue
-					if not bool(devget('PowerSupply')):
-						pl.debug('Not using DBUS+UPower with {0}: not a power supply', devpath)
-						continue
-					devices.append(devpath)
-					pl.debug('Using DBUS+UPower with {0}', devpath)
-				if devices:
-					def _flatten_battery(pl):
-						energy = 0.0
-						energy_full = 0.0
-						state = True
-						for devpath in devices:
-							dev = bus.get_object(interface, devpath)
-							energy_full += float(
-								dbus.Interface(dev, dbus_interface=devinterface).Get(
-									devtype_name,
-									'EnergyFull'
-								),
-							)
-							energy += float(
-								dbus.Interface(dev, dbus_interface=devinterface).Get(
-									devtype_name,
-									'Energy'
-								),
-							)
-							state &= dbus.Interface(dev, dbus_interface=devinterface).Get(
-								devtype_name,
-								'State'
-							) != 2
-						if energy_full > 0:
-							return (energy * 100.0 / energy_full), state
-						else:
-							return 0.0, state
-					return _flatten_battery
-				pl.debug('Not using DBUS+UPower as no batteries were found')
+	# try:
+	# 	import dbus
+	# except ImportError:
+	# 	pl.debug('Not using DBUS+UPower as dbus is not available')
+	# else:
+	# 	try:
+	# 		bus = dbus.SystemBus()
+	# 	except Exception as e:
+	# 		pl.exception('Failed to connect to system bus: {0}', str(e))
+	# 	else:
+	# 		interface = 'org.freedesktop.UPower'
+	# 		try:
+	# 			up = bus.get_object(interface, '/org/freedesktop/UPower')
+	# 		except dbus.exceptions.DBusException as e:
+	# 			if getattr(e, '_dbus_error_name', '').endswith('ServiceUnknown'):
+	# 				pl.debug('Not using DBUS+UPower as UPower is not available via dbus')
+	# 			else:
+	# 				pl.exception('Failed to get UPower service with dbus: {0}', str(e))
+	# 		else:
+	# 			devinterface = 'org.freedesktop.DBus.Properties'
+	# 			devtype_name = interface + '.Device'
+	# 			devices = []
+	# 			for devpath in up.EnumerateDevices(dbus_interface=interface):
+	# 				dev = bus.get_object(interface, devpath)
+	# 				devget = lambda what: dev.Get(
+	# 					devtype_name,
+	# 					what,
+	# 					dbus_interface=devinterface
+	# 				)
+	# 				if int(devget('Type')) != 2:
+	# 					pl.debug('Not using DBUS+UPower with {0}: invalid type', devpath)
+	# 					continue
+	# 				if not bool(devget('IsPresent')):
+	# 					pl.debug('Not using DBUS+UPower with {0}: not present', devpath)
+	# 					continue
+	# 				if not bool(devget('PowerSupply')):
+	# 					pl.debug('Not using DBUS+UPower with {0}: not a power supply', devpath)
+	# 					continue
+	# 				devices.append(devpath)
+	# 				pl.debug('Using DBUS+UPower with {0}', devpath)
+	# 			if devices:
+	# 				def _flatten_battery(pl):
+	# 					energy = 0.0
+	# 					energy_full = 0.0
+	# 					state = True
+	# 					for devpath in devices:
+	# 						dev = bus.get_object(interface, devpath)
+	# 						energy_full += float(
+	# 							dbus.Interface(dev, dbus_interface=devinterface).Get(
+	# 								devtype_name,
+	# 								'EnergyFull'
+	# 							),
+	# 						)
+	# 						energy += float(
+	# 							dbus.Interface(dev, dbus_interface=devinterface).Get(
+	# 								devtype_name,
+	# 								'Energy'
+	# 							),
+	# 						)
+	# 						state &= dbus.Interface(dev, dbus_interface=devinterface).Get(
+	# 							devtype_name,
+	# 							'State'
+	# 						) != 2
+	# 					if energy_full > 0:
+	# 						return (energy * 100.0 / energy_full), state
+	# 					else:
+	# 						return 0.0, state
+	# 				return _flatten_battery
+	# 			pl.debug('Not using DBUS+UPower as no batteries were found')
 
 	if os.path.isdir('/sys/class/power_supply'):
 		# ENERGY_* attributes represents capacity in µWh only.
@@ -231,32 +231,32 @@ def battery(pl, format='{ac_state} {capacity:3.0%}', steps=5, gamify=False, full
 	'''Return battery charge status.
 
 	:param str format:
-		Percent format in case gamify is False. Format arguments: ``ac_state`` 
-		which is equal to either ``online`` or ``offline`` string arguments and 
-		``capacity`` which is equal to current battery capacity in interval [0, 
+		Percent format in case gamify is False. Format arguments: ``ac_state``
+		which is equal to either ``online`` or ``offline`` string arguments and
+		``capacity`` which is equal to current battery capacity in interval [0,
 		100].
 	:param int steps:
 		Number of discrete steps to show between 0% and 100% capacity if gamify
 		is True.
 	:param bool gamify:
-		Measure in hearts (♥) instead of percentages. For full hearts 
-		``battery_full`` highlighting group is preferred, for empty hearts there 
-		is ``battery_empty``. ``battery_online`` or ``battery_offline`` group 
-		will be used for leading segment containing ``online`` or ``offline`` 
+		Measure in hearts (♥) instead of percentages. For full hearts
+		``battery_full`` highlighting group is preferred, for empty hearts there
+		is ``battery_empty``. ``battery_online`` or ``battery_offline`` group
+		will be used for leading segment containing ``online`` or ``offline``
 		argument contents.
 	:param str full_heart:
 		Heart displayed for “full” part of battery.
 	:param str empty_heart:
 		Heart displayed for “used” part of battery. It is also displayed using
-		another gradient level and highlighting group, so it is OK for it to be 
-		the same as full_heart as long as necessary highlighting groups are 
+		another gradient level and highlighting group, so it is OK for it to be
+		the same as full_heart as long as necessary highlighting groups are
 		defined.
 	:param str online:
 		Symbol used if computer is connected to a power supply.
 	:param str offline:
 		Symbol used if computer is not connected to a power supply.
 
-	``battery_gradient`` and ``battery`` groups are used in any case, first is 
+	``battery_gradient`` and ``battery`` groups are used in any case, first is
 	preferred.
 
 	Highlight groups used: ``battery_full`` or ``battery_gradient`` (gradient) or ``battery``, ``battery_empty`` or ``battery_gradient`` (gradient) or ``battery``, ``battery_online`` or ``battery_ac_state`` or ``battery_gradient`` (gradient) or ``battery``, ``battery_offline`` or ``battery_ac_state`` or ``battery_gradient`` (gradient) or ``battery``.
@@ -295,7 +295,7 @@ def battery(pl, format='{ac_state} {capacity:3.0%}', steps=5, gamify=False, full
 		ret.append({
 			'contents': format.format(ac_state=(online if ac_powered else offline), capacity=(capacity / 100.0)),
 			'highlight_groups': ['battery_gradient', 'battery'],
-			# Gradients are “least alert – most alert” by default, capacity has 
+			# Gradients are “least alert – most alert” by default, capacity has
 			# the opposite semantics.
 			'gradient_level': 100 - capacity,
 		})
